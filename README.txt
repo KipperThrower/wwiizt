@@ -1,0 +1,1 @@
+Projekt na zaliczenie Wyszukiwanie i Wydobywanie Wiedzy i Informacji z tekstu.

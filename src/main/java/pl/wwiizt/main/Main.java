@@ -1,12 +1,13 @@
 package pl.wwiizt.main;
 
 import org.apache.log4j.Logger;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class Main {
 
 	private static final Logger logger = Logger.getLogger(Main.class);
-	private static ClassPathXmlApplicationContext appContext;
+	private static ApplicationContext appContext;
 
 	/**
 	 * @param args
