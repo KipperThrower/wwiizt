@@ -1,7 +1,10 @@
 package pl.wwiizt.main;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -24,6 +27,10 @@ public class Main {
 	private final static String CONVERT = "convert";
 	private final static String HELP = "help";
 
+	private static String query;
+	private static List<String> supposedResults;
+	private static List<String> hits;
+	
 	/**
 	 * @param args
 	 */
@@ -50,17 +57,9 @@ public class Main {
 		}
 
 		if (cmd.hasOption(SEARCH)) {
-			SearchEngineService service = appContext.getBean(SearchEngineService.class);
-			List<String> hits = service.search(cmd.getOptionValue(SEARCH));
-
-			System.out.println("\n=========================== Search results: ");
-			
-			if (hits.isEmpty())
-				System.out.println("No results found");
-			else {
-				for (String hit : hits)
-					System.out.println(hit);
-			}
+			parseQueryAndSupposedResults(new File(cmd.getOptionValue(SEARCH)));
+			search();
+			printResultsAndMeasures();
 		}
 	}
 
@@ -81,11 +80,65 @@ public class Main {
 		try {
 			result = cmdParser.parse(options, args);
 		} catch (ParseException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 			System.exit(1);
 		}
 
 		return result;
 	}
 
+	private static void parseQueryAndSupposedResults(File file) {
+		Scanner scan = null;
+		supposedResults = new ArrayList<String>();
+
+		try {
+			scan = new Scanner(file);
+
+			query = scan.nextLine();
+
+			while (scan.hasNextLine()) {
+				String nextLine = scan.nextLine();
+				
+				if (!"".equals(nextLine))
+					supposedResults.add(nextLine);
+			}
+
+		} catch (FileNotFoundException e) {
+			System.out.println("File not found " + file.getAbsolutePath());
+			System.exit(1);
+		}
+
+		scan.close();
+	}
+	
+	private static void search() {
+		SearchEngineService service = appContext.getBean(SearchEngineService.class);
+		hits = service.search(query);
+	}
+
+	private static void printResultsAndMeasures() {
+		System.out.println("\n\n=========================== Query: ");
+		System.out.println(query);
+		System.out.println("\n\n=========================== Supposed results: ");
+		printList(supposedResults);
+		System.out.println("\n\n=========================== Search results: ");
+		printList(hits);
+		System.out.println("\n\n=========================== Measures");
+		printMeasures();
+	}
+
+	private static void printList(List<String> list) {
+		if (list.isEmpty())
+			System.out.println("Nothing found");
+		else {
+			for (String s: list)
+				System.out.println(s);
+		}
+		
+	}
+	
+	private static void printMeasures() {
+		// TODO Auto-generated method stub
+	}
+	
 }
