@@ -18,7 +18,7 @@ public class SearchEngineTest {
 	@Autowired
 	private SearchEngineService searchEngineService;
 	
-	@PostConstruct
+//	@PostConstruct
 	public void test() {
 		final String PATH = "D:\\do szkoły\\Wydobywanie wiedzy i informacji z tekstu\\subwiki-with-questions";
 		final String TEXT_QUERY = "stany zjednoczone";
