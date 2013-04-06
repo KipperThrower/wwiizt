@@ -27,6 +27,8 @@ public class Main {
 	private final static String CONVERT = "convert";
 	private final static String HELP = "help";
 
+	private final static int MAX_DOCS = 20;
+	
 	private static String query;
 	private static List<String> supposedResults;
 	private static List<String> hits;
@@ -96,7 +98,7 @@ public class Main {
 
 			query = scan.nextLine();
 
-			while (scan.hasNextLine()) {
+			while (scan.hasNextLine() && supposedResults.size() <  MAX_DOCS) {
 				String nextLine = scan.nextLine();
 				
 				if (!"".equals(nextLine))
@@ -114,6 +116,10 @@ public class Main {
 	private static void search() {
 		SearchEngineService service = appContext.getBean(SearchEngineService.class);
 		hits = service.search(query);
+		
+		if (hits.size() > MAX_DOCS)
+			hits = hits.subList(0, MAX_DOCS);
+		
 	}
 
 	private static void printResultsAndMeasures() {
@@ -131,6 +137,7 @@ public class Main {
 		if (list.isEmpty())
 			System.out.println("Nothing found");
 		else {
+			
 			for (String s: list)
 				System.out.println(s);
 		}

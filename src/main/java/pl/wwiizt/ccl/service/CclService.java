@@ -7,17 +7,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 
+import pl.wwiizt.ccl.model.ChunkList;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-
-import pl.wwiizt.ccl.model.ChunkList;
 
 @Service("cclService")
 public class CclService {
