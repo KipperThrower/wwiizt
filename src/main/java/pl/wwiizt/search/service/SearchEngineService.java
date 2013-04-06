@@ -90,10 +90,10 @@ public class SearchEngineService {
 		Node node = nodeBuilder().client(true).node();
 		Client client = node.client();
 		QueryBuilder builder = QueryBuilders.boolQuery()
-//				.should(QueryBuilders.matchPhraseQuery(FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT, query).boost(BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT))
-				.should(QueryBuilders.matchPhraseQuery(FIELD_FIRST_SENTENCE_PLAIN_TEXT, query).boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
-//				.should(QueryBuilders.matchPhraseQuery(FIELD_BASE_PLAIN_TEXT, query).boost(BOOST_FIELD_BASE_PLAIN_TEXT))
-				.should(QueryBuilders.matchPhraseQuery(FIELD_PLAIN_TEXT, query).boost(BOOST_FIELD_PLAIN_TEXT));
+//				.should(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT))
+				.should(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
+//				.should(QueryBuilders.queryString(query).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT))
+				.should(QueryBuilders.queryString(query).field(FIELD_PLAIN_TEXT).boost(BOOST_FIELD_PLAIN_TEXT));
 				
 		
 		SearchResponse response = client.prepareSearch(INDEX_NAME)
