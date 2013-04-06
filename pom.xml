@@ -114,6 +114,18 @@
 			<version>13.0</version>
 		</dependency>
 		
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-jaxrs</artifactId>
+			<version>1.9.12</version>
+		</dependency>
+		
+		<dependency>
+    		<groupId>org.elasticsearch</groupId>
+   		 	<artifactId>elasticsearch</artifactId>
+    		<version>0.20.6</version>
+		</dependency>
+		
 	</dependencies>
 	
 </project>

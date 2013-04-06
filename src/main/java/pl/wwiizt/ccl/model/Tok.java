@@ -7,6 +7,8 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.springframework.util.CollectionUtils;
+
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Tok {
@@ -53,7 +55,7 @@ public class Tok {
 	}
 	
 	public String getFirstBase() {
-		if (lexes != null) {
+		if (!CollectionUtils.isEmpty(lexes)) {
 			return lexes.get(0).getBase();
 		}
 		return "";

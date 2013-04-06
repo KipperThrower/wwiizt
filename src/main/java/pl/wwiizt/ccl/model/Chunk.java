@@ -64,5 +64,19 @@ public class Chunk {
 		}
 		return sb.toString();
 	}
+	
+	public String getFirstSentencePlainText() {
+		if (!CollectionUtils.isEmpty(sentences)) {
+			return sentences.get(0).getPlainText();
+		}
+		return "";
+	}
+	
+	public String getFirstSentenceBasePlainText() {
+		if (!CollectionUtils.isEmpty(sentences)) {
+			return sentences.get(0).getBasePlainText();
+		}
+		return "";
+	}
 
 }

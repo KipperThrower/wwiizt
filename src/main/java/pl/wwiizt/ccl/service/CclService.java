@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 
 import pl.wwiizt.ccl.model.ChunkList;
 
-@Service
+@Service("cclService")
 public class CclService {
 	
 	private static final Logger LOGGER = Logger.getLogger(CclService.class);
@@ -32,10 +32,10 @@ public class CclService {
 			JAXBContext context = JAXBContext.newInstance(ChunkList.class);
 			Unmarshaller um = context.createUnmarshaller();
 			chunkList = (ChunkList) um.unmarshal(new FileReader(file));
-			chunkList.setTitle(file.getName().replace("ccl-", "").replace("\\.xml$", "").replace("32", " "));
+			chunkList.setFileName(file.getName());
+			chunkList.setTitle(file.getName().replace("ccl-", "").replaceAll("\\.xml$", "").replace("32", " "));
 		} catch (Exception ex) {
 			LOGGER.error(ex, ex);
-			ex.printStackTrace();
 		}
 		return chunkList;
 	}
@@ -112,7 +112,6 @@ public class CclService {
 			fw.flush();
 		} catch(IOException e) {
 			LOGGER.error(e, e);
-			e.printStackTrace();
 		} finally {
 			try {
 				if (fw != null) {
@@ -120,20 +119,8 @@ public class CclService {
 				}
 			} catch (IOException e) {
 				LOGGER.error(e, e);
-				e.printStackTrace();
 			}
 		}
-	}
-	
-	@PostConstruct
-	public void test() {
-		final String PATH = "D:\\do szkoły\\Wydobywanie wiedzy i informacji z tekstu\\subwiki-with-questions";//\\ccl-1.xml";
-		
-//		ChunkList chunkList = loadFile(PATH);
-//		System.out.println(chunkList.getBasePlainText());
-//		System.out.println(chunkList.getPlainText());
-		convertFilesToPlainText(new File(PATH));
-	
 	}
 	
 	private class XmlFileFilter implements FileFilter {

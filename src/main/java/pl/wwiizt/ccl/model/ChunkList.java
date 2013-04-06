@@ -18,6 +18,8 @@ public class ChunkList {
 	private List<Chunk> chunkList;
 	@XmlTransient
 	private String title;
+	@XmlTransient
+	private String fileName;
 
 	public List<Chunk> getChunkList() {
 		return chunkList;
@@ -34,6 +36,15 @@ public class ChunkList {
 	public void setTitle(String title) {
 		this.title = title;
 	}
+	
+	public String getFileName() {
+		return fileName;
+	}
+
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
+
 	
 	public String getPlainText() {
 		StringBuilder sb = new StringBuilder();
@@ -53,6 +64,20 @@ public class ChunkList {
 			}
 		}
 		return sb.toString();
+	}
+	
+	public String getFirstSentencePlainText() {
+		if (!CollectionUtils.isEmpty(chunkList)) {
+			return chunkList.get(0).getFirstSentencePlainText();
+		}
+		return "";
+	}
+	
+	public String getFirstSentenceBasePlainText() {
+		if (!CollectionUtils.isEmpty(chunkList)) {
+			return chunkList.get(0).getFirstSentenceBasePlainText();
+		}
+		return "";
 	}
 
 }
