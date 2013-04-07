@@ -87,6 +87,9 @@ public class SearchEngineService {
 	}
 	
 	public List<String> search(String query) {
+		Preconditions.checkNotNull(query);
+		
+		query = query.replace("?", "");
 		Node node = nodeBuilder().client(true).node();
 		Client client = node.client();
 		QueryBuilder builder = QueryBuilders.boolQuery()
