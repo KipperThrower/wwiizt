@@ -72,7 +72,6 @@ public class SearchEngineService {
 			File[] files = dir.listFiles(new XmlFileFilter());
 			if (files != null) {
 				for(File file : files) {
-					System.out.println(file);
 					ChunkList cl = cclService.loadFile(file);
 					
 					if (cl != null) {
