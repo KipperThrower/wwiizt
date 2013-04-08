@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.chainsaw.Main;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -106,7 +107,7 @@ public class SearchEngineService {
 		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
 		        .setQuery(builder)
 		        .setFrom(0)
-		        .setSize(10)
+		        .setSize(20)
 		        .setExplain(true)
 		        .execute()
 		        .actionGet();
