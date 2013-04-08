@@ -3,7 +3,11 @@ package pl.wwiizt.main;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 
 import org.apache.commons.cli.CommandLine;
@@ -16,6 +20,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import pl.wwiizt.ccl.service.CclService;
+import pl.wwiizt.helpers.MeasuresHelper;
 import pl.wwiizt.search.service.SearchEngineService;
 
 public class Main {
@@ -25,14 +30,19 @@ public class Main {
 	private final static String SEARCH = "search";
 	private final static String INDEX = "index";
 	private final static String CONVERT = "convert";
+	private final static String PRINT_ALL = "printAll";
 	private final static String HELP = "help";
 
 	private final static int MAX_DOCS = 20;
-	
-	private static String query;
-	private static List<String> supposedResults;
-	private static List<String> hits;
-	
+
+	private static boolean printAll = false;
+	private static Map<String, List<String>> queryAndSupposedResults;
+
+	private static double precisionMean;
+	private static double recallMean;
+	private static double fmeasureMean;
+	private static double mrr;
+
 	/**
 	 * @param args
 	 */
@@ -59,9 +69,9 @@ public class Main {
 		}
 
 		if (cmd.hasOption(SEARCH)) {
+			printAll = cmd.hasOption(PRINT_ALL);
 			parseQueryAndSupposedResults(new File(cmd.getOptionValue(SEARCH)));
 			search();
-			printResultsAndMeasures();
 		}
 	}
 
@@ -71,6 +81,7 @@ public class Main {
 		options.addOption(SEARCH, "s", true, "search query");
 		options.addOption(INDEX, "i", true, "index path");
 		options.addOption(CONVERT, "i", true, "convert path");
+		options.addOption(PRINT_ALL, "p", false, "print all results");
 		options.addOption(HELP, "h", false, "help");
 
 		return options;
@@ -91,18 +102,23 @@ public class Main {
 
 	private static void parseQueryAndSupposedResults(File file) {
 		Scanner scan = null;
-		supposedResults = new ArrayList<String>();
+		queryAndSupposedResults = new HashMap<String, List<String>>();
 
 		try {
 			scan = new Scanner(file);
 
-			query = scan.nextLine();
+			while (scan.hasNextLine()) {
+				String line = scan.nextLine();
 
-			while (scan.hasNextLine() && supposedResults.size() <  MAX_DOCS) {
-				String nextLine = scan.nextLine();
-				
-				if (!"".equals(nextLine))
-					supposedResults.add(nextLine);
+				String[] splittedLine = line.split(";");
+
+				if (splittedLine.length < 2)
+					continue;
+
+				String query = splittedLine[0];
+				String[] supposedResults = splittedLine[1].split(" ");
+
+				queryAndSupposedResults.put(query, Arrays.asList(supposedResults));
 			}
 
 		} catch (FileNotFoundException e) {
@@ -112,40 +128,81 @@ public class Main {
 
 		scan.close();
 	}
-	
+
 	private static void search() {
 		SearchEngineService service = appContext.getBean(SearchEngineService.class);
-		hits = service.search(query);
-		
-		if (hits.size() > MAX_DOCS)
-			hits = hits.subList(0, MAX_DOCS);
-		
+
+		for (Entry<String, List<String>> e : queryAndSupposedResults.entrySet()) {
+			List<String> hits = service.search(e.getKey());
+
+			if (hits.size() > MAX_DOCS)
+				hits = hits.subList(0, MAX_DOCS);
+
+			MeasuresHelper measures = new MeasuresHelper(e.getValue(), hits, MAX_DOCS);
+
+			saveMeasures(measures);
+
+			if (printAll)
+				printResultsAndMeasures(e.getKey(), e.getValue(), hits, measures);
+		}
+
+		printFinalMeasures();
 	}
 
-	private static void printResultsAndMeasures() {
+	private static void printResultsAndMeasures(String query, List<String> supposedResults, List<String> searchResults, MeasuresHelper measures) {
 		System.out.println("\n\n=========================== Query: ");
 		System.out.println(query);
 		System.out.println("\n\n=========================== Supposed results: ");
 		printList(supposedResults);
 		System.out.println("\n\n=========================== Search results: ");
-		printList(hits);
-		System.out.println("\n\n=========================== Measures");
-		printMeasures();
+		printList(searchResults);
+
+		if (!searchResults.isEmpty()) {
+			System.out.println("\n\n=========================== Measures");
+			printMeasures(measures);
+		}
 	}
 
 	private static void printList(List<String> list) {
 		if (list.isEmpty())
 			System.out.println("Nothing found");
 		else {
-			
-			for (String s: list)
+
+			for (String s : list)
 				System.out.println(s);
 		}
-		
 	}
-	
-	private static void printMeasures() {
-		// TODO Auto-generated method stub
+
+	private static void printMeasures(MeasuresHelper measures) {
+		System.out.println("\nPrecision: " + measures.getPrecision());
+		System.out.println("\nRecall: " + measures.getRecall());
+		System.out.println("\nF-score: " + measures.getFmeasure());
+		System.out.println("\nRecall_rank: " + measures.getRecallRank());
+		System.out.println("\nPrecision_log: " + measures.getLogarithmicPrecision());
 	}
-	
+
+	private static void saveMeasures(MeasuresHelper measures) {
+		precisionMean += measures.getPrecision();
+		recallMean += measures.getRecall();
+		fmeasureMean += measures.getFmeasure();
+		mrr += measures.getRank() == 0 ? 0 : 1.0 / (double) measures.getRank();
+	}
+
+	/** 
+	 *	sum = 0
+	 *	for question in collection:
+	 *	sum += 1/rank
+	 *
+	 *	return sum / len(collection)
+	 *				
+	 * http://en.wikipedia.org/wiki/Mean_reciprocal_rank
+	 */
+	private static void printFinalMeasures() {
+		int size = queryAndSupposedResults.size();
+		System.out.println("\n\nPrecision mean: " + precisionMean / (double) size);
+		System.out.println("\n\nRecall mean: " + recallMean / (double) size);
+		System.out.println("\n\nF-measure mean: " + fmeasureMean / (double) size);
+		System.out.println("\n\nMRR: " + mrr / (double) size);
+	}
+
 }
