@@ -100,6 +100,7 @@ public class SearchEngineService {
 //				.should(QueryBuilders.queryString(query).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT))
 				.should(QueryBuilders.queryString(query).field(FIELD_PLAIN_TEXT).boost(BOOST_FIELD_PLAIN_TEXT));
 				
+//		client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet(); 
 		
 		SearchResponse response = client.prepareSearch(indexName)
 		        .setTypes(TYPE_NAME)

@@ -21,9 +21,9 @@ public class SearchEngineTest {
 		final String PATH = "D:\\do szkoły\\Wydobywanie wiedzy i informacji z tekstu\\subwiki-with-questions";
 		final String TEXT_QUERY = "stany zjednoczone";
 		
-		searchEngineService.index(new File(PATH));
+		searchEngineService.index(new File(PATH), "test");
 		
-		List<String> hits = searchEngineService.search(TEXT_QUERY);
+		List<String> hits = searchEngineService.search(TEXT_QUERY, "test");
 		for (String hit : hits) {
 			System.out.println(hit);
 		}
