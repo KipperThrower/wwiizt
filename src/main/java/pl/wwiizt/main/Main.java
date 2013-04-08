@@ -30,6 +30,7 @@ public class Main {
 	private final static String SEARCH = "search";
 	private final static String INDEX = "index";
 	private final static String CONVERT = "convert";
+	private final static String INDEX_NAME = "indexName";
 	private final static String PRINT_ALL = "printAll";
 	private final static String HELP = "help";
 
@@ -43,6 +44,8 @@ public class Main {
 	private static double fmeasureMean;
 	private static double mrr;
 
+	private static String indexName;
+	
 	/**
 	 * @param args
 	 */
@@ -63,9 +66,11 @@ public class Main {
 			service.convertFilesToPlainText(new File(cmd.getOptionValue(CONVERT)));
 		}
 
+		indexName = cmd.getOptionValue(INDEX_NAME, SearchEngineService.INDEX_NAME);
+		
 		if (cmd.hasOption(INDEX)) {
 			SearchEngineService service = appContext.getBean(SearchEngineService.class);
-			service.index(new File(cmd.getOptionValue(INDEX)));
+			service.index(new File(cmd.getOptionValue(INDEX)), indexName);
 		}
 
 		if (cmd.hasOption(SEARCH)) {
@@ -82,6 +87,7 @@ public class Main {
 		options.addOption(INDEX, "i", true, "index path");
 		options.addOption(CONVERT, "i", true, "convert path");
 		options.addOption(PRINT_ALL, "p", false, "print all results");
+		options.addOption(INDEX_NAME, true, "index name");
 		options.addOption(HELP, "h", false, "help");
 
 		return options;
@@ -133,7 +139,7 @@ public class Main {
 		SearchEngineService service = appContext.getBean(SearchEngineService.class);
 
 		for (Entry<String, List<String>> e : queryAndSupposedResults.entrySet()) {
-			List<String> hits = service.search(e.getKey());
+			List<String> hits = service.search(e.getKey(), indexName);
 
 			if (hits.size() > MAX_DOCS)
 				hits = hits.subList(0, MAX_DOCS);

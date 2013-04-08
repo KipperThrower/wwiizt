@@ -63,7 +63,7 @@ public class SearchEngineService {
 		node.close();
 	}
 	
-	public void index(File dir) {
+	public void index(File dir, String indexName) {
 		Preconditions.checkNotNull(dir);
 		Node node = nodeBuilder().client(true).node();
 		Client client = node.client();
@@ -73,8 +73,9 @@ public class SearchEngineService {
 			if (files != null) {
 				for(File file : files) {
 					ChunkList cl = cclService.loadFile(file);
+					
 					if (cl != null) {
-						IndexResponse response = client.prepareIndex(INDEX_NAME, TYPE_NAME, cl.getFileName())
+						IndexResponse response = client.prepareIndex(indexName, TYPE_NAME, cl.getFileName())
 								.setSource(jsonService.getJson(cl))
 								.execute()
 								.actionGet();
@@ -86,7 +87,7 @@ public class SearchEngineService {
 		node.close();
 	}
 	
-	public List<String> search(String query) {
+	public List<String> search(String query, String indexName) {
 		Preconditions.checkNotNull(query);
 		
 		query = query.replace("?", "");
@@ -99,7 +100,7 @@ public class SearchEngineService {
 				.should(QueryBuilders.queryString(query).field(FIELD_PLAIN_TEXT).boost(BOOST_FIELD_PLAIN_TEXT));
 				
 		
-		SearchResponse response = client.prepareSearch(INDEX_NAME)
+		SearchResponse response = client.prepareSearch(indexName)
 		        .setTypes(TYPE_NAME)
 		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
 		        .setQuery(builder)
