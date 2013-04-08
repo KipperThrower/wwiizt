@@ -1,7 +1,6 @@
 package pl.wwiizt.json.service;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -12,11 +11,11 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.stereotype.Service;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-
 import pl.wwiizt.ccl.model.ChunkList;
 import pl.wwiizt.search.service.SearchEngineService;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 
 @Service
 public class JsonService {
