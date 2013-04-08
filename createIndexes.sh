@@ -11,7 +11,7 @@
 curl -XPUT 'http://localhost:9200/wiki/' -d '';
 
 #BM25
-curl -XPUT 'http://localhost:9200/wikiib/' -d '{                           
+curl -XPUT 'http://localhost:9200/wikibm25/' -d '{                           
     "settings" : {
         "index" : {
             "similarity" : "BM25"
@@ -20,7 +20,7 @@ curl -XPUT 'http://localhost:9200/wikiib/' -d '{
 }';
 
 #DRF - divergence from randomness
- curl -XPUT 'http://localhost:9200/wikiib/' -d '{                           
+ curl -XPUT 'http://localhost:9200/wikidrf/' -d '{                           
     "settings" : {
         "index" : {
             "similarity" : "DRF"
