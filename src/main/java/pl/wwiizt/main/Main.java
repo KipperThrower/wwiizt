@@ -2,7 +2,6 @@ package pl.wwiizt.main;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +33,7 @@ public class Main {
 	private final static String PRINT_ALL = "printAll";
 	private final static String HELP = "help";
 
-	private final static int MAX_DOCS = 20;
+	public final static int MAX_DOCS = 20;
 
 	private static boolean printAll = false;
 	private static Map<String, List<String>> queryAndSupposedResults;
@@ -159,15 +158,15 @@ public class Main {
 	}
 
 	private static void printResultsAndMeasures(String query, List<String> supposedResults, List<String> searchResults, MeasuresHelper measures) {
-		System.out.println("\n\n=========================== Query: ");
+		System.out.println("\n=========================== Query: ");
 		System.out.println(query);
-		System.out.println("\n\n=========================== Supposed results: ");
+		System.out.println("\n=========================== Supposed results: ");
 		printList(supposedResults);
-		System.out.println("\n\n=========================== Search results: ");
+		System.out.println("\n=========================== Search results: ");
 		printList(searchResults);
 
 		if (!searchResults.isEmpty()) {
-			System.out.println("\n\n=========================== Measures");
+			System.out.println("\n=========================== Measures");
 			printMeasures(measures);
 		}
 	}
@@ -183,11 +182,11 @@ public class Main {
 	}
 
 	private static void printMeasures(MeasuresHelper measures) {
-		System.out.println("\nPrecision: " + measures.getPrecision());
-		System.out.println("\nRecall: " + measures.getRecall());
-		System.out.println("\nF-score: " + measures.getFmeasure());
-	//	System.out.println("\nRecall_rank: " + measures.getRecallRank());
-	//	System.out.println("\nPrecision_log: " + measures.getLogarithmicPrecision());
+		System.out.println("Precision: " + measures.getPrecision());
+		System.out.println("Recall: " + measures.getRecall());
+		System.out.println("F-score: " + measures.getFmeasure());
+//		System.out.println("Recall_rank: " + measures.getRecallRank());
+//		System.out.println("Precision_log: " + measures.getLogarithmicPrecision());
 	}
 
 	private static void saveMeasures(MeasuresHelper measures) {

@@ -1,5 +1,7 @@
 package pl.wwiizt.search.service;
 
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.util.List;
@@ -18,14 +20,12 @@ import org.elasticsearch.search.SearchHit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-
 import pl.wwiizt.ccl.model.ChunkList;
 import pl.wwiizt.ccl.service.CclService;
 import pl.wwiizt.json.service.JsonService;
 
-import static org.elasticsearch.node.NodeBuilder.*;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 
 
@@ -121,7 +121,7 @@ public class SearchEngineService {
 		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
 		        .setQuery(builder)
 		        .setFrom(0)
-		        .setSize(20)
+		        .setSize(pl.wwiizt.main.Main.MAX_DOCS)
 		        .setExplain(true)
 		        .execute()
 		        .actionGet();
