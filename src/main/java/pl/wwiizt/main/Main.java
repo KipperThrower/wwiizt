@@ -68,8 +68,8 @@ public class Main {
 
 		indexName = cmd.getOptionValue(INDEX_NAME, SearchEngineService.INDEX_NAME);
 		
+		SearchEngineService service = appContext.getBean(SearchEngineService.class);
 		if (cmd.hasOption(INDEX)) {
-			SearchEngineService service = appContext.getBean(SearchEngineService.class);
 			service.index(new File(cmd.getOptionValue(INDEX)), indexName);
 		}
 
@@ -78,6 +78,9 @@ public class Main {
 			parseQueryAndSupposedResults(new File(cmd.getOptionValue(SEARCH)));
 			search();
 		}
+		
+		
+		service.closeNode();
 	}
 
 	private static Options getOptions() {
@@ -183,8 +186,8 @@ public class Main {
 		System.out.println("\nPrecision: " + measures.getPrecision());
 		System.out.println("\nRecall: " + measures.getRecall());
 		System.out.println("\nF-score: " + measures.getFmeasure());
-		System.out.println("\nRecall_rank: " + measures.getRecallRank());
-		System.out.println("\nPrecision_log: " + measures.getLogarithmicPrecision());
+	//	System.out.println("\nRecall_rank: " + measures.getRecallRank());
+	//	System.out.println("\nPrecision_log: " + measures.getLogarithmicPrecision());
 	}
 
 	private static void saveMeasures(MeasuresHelper measures) {

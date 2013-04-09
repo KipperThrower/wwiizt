@@ -4,8 +4,9 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.log4j.Logger;
-import org.apache.log4j.chainsaw.Main;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -51,23 +52,39 @@ public class SearchEngineService {
 	@Autowired
 	private CclService cclService;	
 	
+	private Node node;
+	private Client client;
+	
+	@PostConstruct
+	public void intit() {
+		node = nodeBuilder().client(true).node();
+		client = node.client();
+	}
+	
+	public void closeNode() {
+		if (node != null) {
+			node.close();
+		}
+	}
+	
+	
+	public void destroy() {
+		
+	}
+	
 	public void index(ChunkList chunkList) {
 		Preconditions.checkNotNull(chunkList);
 		
-		Node node = nodeBuilder().client(true).node();
-		Client client = node.client();
+		
 		IndexResponse response = client.prepareIndex(INDEX_NAME, TYPE_NAME, chunkList.getFileName())
 			.setSource(jsonService.getJson(chunkList))
 			.execute()
 			.actionGet();
 
-		node.close();
 	}
 	
 	public void index(File dir, String indexName) {
 		Preconditions.checkNotNull(dir);
-		Node node = nodeBuilder().client(true).node();
-		Client client = node.client();
 		
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
@@ -85,15 +102,12 @@ public class SearchEngineService {
 				}
 			}
 		}
-		node.close();
 	}
 	
 	public List<String> search(String query, String indexName) {
 		Preconditions.checkNotNull(query);
 		
 		query = query.replace("?", "");
-		Node node = nodeBuilder().client(true).node();
-		Client client = node.client();
 		QueryBuilder builder = QueryBuilders.boolQuery()
 //				.should(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT))
 				.should(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
@@ -112,7 +126,6 @@ public class SearchEngineService {
 		        .execute()
 		        .actionGet();
 
-		node.close();
 		List<String> result = Lists.newArrayList();
 		for (SearchHit sh: response.getHits()) {
 			result.add(sh.getId());
