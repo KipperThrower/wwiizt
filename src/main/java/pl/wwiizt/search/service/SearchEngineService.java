@@ -114,12 +114,8 @@ public class SearchEngineService {
 
 		query = query.replace("?", "");
 		QueryBuilder builder = QueryBuilders.boolQuery()
-		//				.should(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT))
 				.should(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
-				//				.should(QueryBuilders.queryString(query).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT))
 				.should(QueryBuilders.queryString(query).field(FIELD_PLAIN_TEXT).boost(BOOST_FIELD_PLAIN_TEXT));
-
-		//		client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet(); 
 
 		SearchResponse response = client.prepareSearch(indexName).setTypes(TYPE_NAME).setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setQuery(builder)
 				.setFrom(0).setSize(pl.wwiizt.main.Main.MAX_DOCS).setExplain(true).execute().actionGet();
