@@ -77,7 +77,6 @@ public class SearchEngineService {
 
 		IndexResponse response = client.prepareIndex(INDEX_NAME, TYPE_NAME, chunkList.getFileName()).setSource(jsonService.getJson(chunkList)).execute()
 				.actionGet();
-
 	}
 
 	public void index(File dir, String indexName) {
