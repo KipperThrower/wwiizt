@@ -9,10 +9,13 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 
 import org.apache.log4j.Logger;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
@@ -28,88 +31,89 @@ import pl.wwiizt.tagger.service.TaggerService;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-
-
 @Service
 public class SearchEngineService {
-	
+
 	public static final String INDEX_NAME = "wiki";
 	public static final String TYPE_NAME = "wiki";
-	
+
 	public static final String FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT = "firstSentenceBasePlainText";
 	public static final String FIELD_FIRST_SENTENCE_PLAIN_TEXT = "firstSentencePlainText";
 	public static final String FIELD_BASE_PLAIN_TEXT = "basePLainText";
 	public static final String FIELD_PLAIN_TEXT = "plainText";
-	
+
 	public static final float BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT = 2.5f;
 	public static final float BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT = 2;
 	public static final float BOOST_FIELD_BASE_PLAIN_TEXT = 1.5f;
 	public static final float BOOST_FIELD_PLAIN_TEXT = 1;
-	
+
 	private static final Logger LOGGER = Logger.getLogger(SearchEngineService.class);
-	
+
 	@Autowired
 	private JsonService jsonService;
 	@Autowired
 	private CclService cclService;
 	@Autowired
 	private TaggerService taggerService;
-	
+
 	private Node node;
 	private Client client;
-	
+
 	@PostConstruct
 	public void intit() {
 		node = nodeBuilder().client(true).node();
 		client = node.client();
 	}
-	
+
 	public void closeNode() {
 		if (node != null) {
 			node.close();
 		}
 	}
-	
-	
+
 	public void destroy() {
-		
-	}
-	
-	public void index(ChunkList chunkList) {
-		Preconditions.checkNotNull(chunkList);
-		
-		
-		IndexResponse response = client.prepareIndex(INDEX_NAME, TYPE_NAME, chunkList.getFileName())
-			.setSource(jsonService.getJson(chunkList))
-			.execute()
-			.actionGet();
 
 	}
-	
+
+	public void index(ChunkList chunkList) {
+		Preconditions.checkNotNull(chunkList);
+
+		IndexResponse response = client.prepareIndex(INDEX_NAME, TYPE_NAME, chunkList.getFileName()).setSource(jsonService.getJson(chunkList)).execute()
+				.actionGet();
+	}
+
 	public void index(File dir, String indexName) {
 		Preconditions.checkNotNull(dir);
-		
+
+		BulkRequest bulkRequest = Requests.bulkRequest();
+
+		long time = System.currentTimeMillis();
+
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
 			if (files != null) {
-				for(File file : files) {
+				for (File file : files) {
 					ChunkList cl = cclService.loadFile(file);
-					
+
 					if (cl != null) {
-						IndexResponse response = client.prepareIndex(indexName, TYPE_NAME, cl.getFileName())
-								.setSource(jsonService.getJson(cl))
-								.execute()
-								.actionGet();
-						LOGGER.info("File indexed: " + cl.getFileName());
+						IndexRequest indexRequest = Requests.indexRequest(indexName);
+						indexRequest.source(jsonService.getJson(cl));
+						indexRequest.type(TYPE_NAME);
+						indexRequest.id(cl.getFileName());
+
+						bulkRequest.add(indexRequest);
 					}
 				}
+
+				client.bulk(bulkRequest).actionGet();
+				LOGGER.info("Files indexed. Time = " + (System.currentTimeMillis() - time) + "ms");
 			}
 		}
 	}
-	
+
 	public List<String> search(String query, String indexName) {
 		Preconditions.checkNotNull(query);
-		
+
 		query = query.replace("?", "");
 		String baseQuery = taggerService.runTagger(query).getBasePlainText();
 		
@@ -139,15 +143,16 @@ public class SearchEngineService {
 		        .execute()
 		        .actionGet();
 
+
 		List<String> result = Lists.newArrayList();
-		for (SearchHit sh: response.getHits()) {
+		for (SearchHit sh : response.getHits()) {
 			result.add(sh.getId());
 		}
 		return result;
 	}
-	
+
 	private class XmlFileFilter implements FileFilter {
-		
+
 		public boolean accept(File pathname) {
 			return pathname.getName().endsWith(".xml");
 		}
