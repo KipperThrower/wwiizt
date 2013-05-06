@@ -2,12 +2,15 @@ package pl.wwiizt.main;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -36,7 +39,8 @@ public class Main {
 	private final static String PRINT_ALL = "printAll";
 	private final static String HELP = "help";
 	private final static String SELECT_FEATURES = "selectFeatures";
-
+	private final static String STOP_LIST = "stoplist";
+	
 	public final static int MAX_DOCS = 20;
 
 	private static boolean printAll = false;
@@ -47,6 +51,8 @@ public class Main {
 	private static double fmeasureMean;
 	private static double mrr;
 
+	private static Set<String> stopList = new HashSet<>();// = new String[] { "?", "Co", "CO", "to", "jest", "Czy", "był", "Czym", "Gdzie", "coś", "być"}; 
+	
 	private static String indexName;
 	
 	/**
@@ -61,9 +67,8 @@ public class Main {
 			formatter.printHelp("wwiizt", options);
 			System.exit(1);
 		}
-		
 		appContext = new ClassPathXmlApplicationContext(new String[] { "applicationContext.xml" });
-		
+
 		if (cmd.hasOption(SELECT_FEATURES)) {
 			FeatureService service = appContext.getBean(FeatureService.class);
 			service.extractBigramsAndSelectFeatures(cmd.getOptionValue(SELECT_FEATURES));
@@ -75,10 +80,15 @@ public class Main {
 		}
 
 		indexName = cmd.getOptionValue(INDEX_NAME, SearchEngineService.INDEX_NAME);
-		
+
 		SearchEngineService service = appContext.getBean(SearchEngineService.class);
+
 		if (cmd.hasOption(INDEX)) {
 			service.index(new File(cmd.getOptionValue(INDEX)), indexName);
+		}
+
+		if (cmd.hasOption(STOP_LIST)) {
+			initStopList(cmd.getOptionValue(STOP_LIST));
 		}
 
 		if (cmd.hasOption(SEARCH)) {
@@ -86,7 +96,6 @@ public class Main {
 			parseQueryAndSupposedResults(new File(cmd.getOptionValue(SEARCH)));
 			search();
 		}
-		
 		
 		service.closeNode();
 	}
@@ -99,6 +108,7 @@ public class Main {
 		options.addOption(CONVERT, "i", true, "convert path");
 		options.addOption(PRINT_ALL, "p", false, "print all results");
 		options.addOption(INDEX_NAME, true, "index name");
+		options.addOption(STOP_LIST, true, "stop list path");
 		options.addOption(HELP, "h", false, "help");
 
 		return options;
@@ -129,7 +139,6 @@ public class Main {
 
 			while (scan.hasNextLine()) {
 				String line = scan.nextLine();
-
 				String[] splittedLine = line.split(";");
 
 				if (splittedLine.length < 2)
@@ -139,7 +148,7 @@ public class Main {
 				String[] supposedResults = splittedLine[1].split(" ");
 
 				
-				File queryCcl = new File(file.getPath() + "Dir\\" + i + ".xml");
+				File queryCcl = new File(file.getPath() + "Dir" + File.separator + i + ".xml");
 				if (!queryCcl.exists()) {
 					String xml = linerWebservice.parse(query);
 					cclService.writeToFile(xml, queryCcl.getPath());
@@ -162,7 +171,7 @@ public class Main {
 		SearchEngineService service = appContext.getBean(SearchEngineService.class);
 
 		for (Entry<ChunkList, List<String>> e : queryAndSupposedResults.entrySet()) {
-			List<String> hits = service.search(e.getKey(), indexName);
+			List<String> hits = service.search(e.getKey(), indexName, stopList);
 
 			if (hits.size() > MAX_DOCS)
 				hits = hits.subList(0, MAX_DOCS);
@@ -232,6 +241,18 @@ public class Main {
 		System.out.println("\n\nRecall mean: " + recallMean / (double) size);
 		System.out.println("\n\nF-measure mean: " + fmeasureMean / (double) size);
 		System.out.println("\n\nMRR: " + mrr / (double) size);
+	}
+	
+	
+	private static void initStopList(String path) {
+		try (Scanner scanner = new Scanner(new File(path))){
+			while(scanner.hasNext()) {
+				stopList.add(scanner.next().trim());
+			}
+		
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

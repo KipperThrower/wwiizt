@@ -4,7 +4,11 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
@@ -49,8 +53,6 @@ public class SearchEngineService {
 	public static final float BOOST_FIELD_PLAIN_TEXT = 1;
 
 	private static final Logger LOGGER = Logger.getLogger(SearchEngineService.class);
-	
-	private static final String[] STOP_LIST = new String[] { "?", "Co", "CO", "to", "jest", "Czy", "był", "Czym", "Gdzie", "coś", "być"}; 
 
 	@Autowired
 	private JsonService jsonService;
@@ -108,56 +110,52 @@ public class SearchEngineService {
 		}
 	}
 
-	public List<String> search(ChunkList cl, String indexName) {
+	public List<String> search(ChunkList cl, String indexName, Set<String> stopList) {
 		Preconditions.checkNotNull(cl);
 
 		String query = cl.getPlainText();
 		if (!StringUtils.hasText(query)) {
 			query = "query";
 		}
-		for (String word : STOP_LIST) {
-			query = query.replace(word, "");
+
+		StringBuilder sb = new StringBuilder();
+		for (String s : query.split(" ")) {
+			if (!stopList.contains(s.toLowerCase())) {
+				sb.append(s);
+				sb.append(" ");
+			}
 		}
+		query = sb.toString();
+
 		String baseQuery = cl.getBasePlainText();
-		
+
 		if (!StringUtils.hasText(baseQuery)) {
 			baseQuery = "query";
 		}
-		for (String word : STOP_LIST) {
-			baseQuery = baseQuery.replace(word, "");
-		}
-		
-		String relatives = getRelatives(baseQuery);
-		
-		QueryBuilder builder = QueryBuilders.boolQuery()
-				.should(QueryBuilders.queryString(baseQuery)
-						.field(FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT)
-						.boost(BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT))
-				.should(QueryBuilders.queryString(baseQuery)
-						.field(FIELD_BASE_PLAIN_TEXT)
-						.boost(BOOST_FIELD_BASE_PLAIN_TEXT))
-				.should(QueryBuilders.queryString(query)
-						.field(FIELD_FIRST_SENTENCE_PLAIN_TEXT)
-						.boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
-				.should(QueryBuilders.queryString(query)
-						.field(FIELD_PLAIN_TEXT)
-						.boost(BOOST_FIELD_PLAIN_TEXT))
-				.should(QueryBuilders.queryString(relatives)
-						.field(FIELD_BASE_PLAIN_TEXT)
-						.boost(BOOST_FIELD_BASE_PLAIN_TEXT));
-				
-//		client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet(); 
-		
-		SearchResponse response = client.prepareSearch(indexName)
-		        .setTypes(TYPE_NAME)
-		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-		        .setQuery(builder)
-		        .setFrom(0)
-		        .setSize(pl.wwiizt.main.Main.MAX_DOCS)
-		        .setExplain(true)
-		        .execute()
-		        .actionGet();
 
+		StringBuilder sbBase = new StringBuilder();
+		for (String s : baseQuery.split(" ")) {
+			if (!stopList.contains(s.toLowerCase())) {
+				sbBase.append(s);
+				sbBase.append(" ");
+			}
+		}
+
+		baseQuery = sbBase.toString();
+
+		String relatives = getRelatives(baseQuery);
+
+		QueryBuilder builder = QueryBuilders.boolQuery()
+				.must(QueryBuilders.queryString(baseQuery).field(FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT))
+				.must(QueryBuilders.queryString(baseQuery).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT))
+				.must(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
+				.must(QueryBuilders.queryString(query).field(FIELD_PLAIN_TEXT).boost(BOOST_FIELD_PLAIN_TEXT))
+				.must(QueryBuilders.queryString(relatives).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT));
+
+		//		client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet(); 
+
+		SearchResponse response = client.prepareSearch(indexName).setTypes(TYPE_NAME).setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setQuery(builder)
+				.setFrom(0).setSize(pl.wwiizt.main.Main.MAX_DOCS).setExplain(true).execute().actionGet();
 
 		List<String> result = Lists.newArrayList();
 		for (SearchHit sh : response.getHits()) {
@@ -165,7 +163,7 @@ public class SearchEngineService {
 		}
 		return result;
 	}
-	
+
 	private String getRelatives(String baseText) {
 		StringBuffer sb = new StringBuffer();
 		String[] tokens = baseText.split(" ");
@@ -176,6 +174,7 @@ public class SearchEngineService {
 				sb.append(" ");
 			}
 		}
+		sb.append(baseText);
 		return sb.toString();
 	}
 
@@ -185,5 +184,4 @@ public class SearchEngineService {
 			return pathname.getName().endsWith(".xml");
 		}
 	}
-
 }
