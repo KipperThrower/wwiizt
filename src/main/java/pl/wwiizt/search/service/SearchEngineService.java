@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import pl.wwiizt.ccl.model.ChunkList;
 import pl.wwiizt.ccl.service.CclService;
 import pl.wwiizt.json.service.JsonService;
+import pl.wwiizt.tagger.service.TaggerService;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -50,7 +51,9 @@ public class SearchEngineService {
 	@Autowired
 	private JsonService jsonService;
 	@Autowired
-	private CclService cclService;	
+	private CclService cclService;
+	@Autowired
+	private TaggerService taggerService;
 	
 	private Node node;
 	private Client client;
@@ -108,11 +111,21 @@ public class SearchEngineService {
 		Preconditions.checkNotNull(query);
 		
 		query = query.replace("?", "");
+		String baseQuery = taggerService.runTagger(query).getBasePlainText();
+		
 		QueryBuilder builder = QueryBuilders.boolQuery()
-//				.should(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT))
-				.should(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
-//				.should(QueryBuilders.queryString(query).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT))
-				.should(QueryBuilders.queryString(query).field(FIELD_PLAIN_TEXT).boost(BOOST_FIELD_PLAIN_TEXT));
+				.should(QueryBuilders.queryString(baseQuery)
+						.field(FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT)
+						.boost(BOOST_FIELD_FIRST_SENTENCE_BASE_PLAIN_TEXT))
+				.should(QueryBuilders.queryString(baseQuery)
+						.field(FIELD_BASE_PLAIN_TEXT)
+						.boost(BOOST_FIELD_BASE_PLAIN_TEXT))
+				.should(QueryBuilders.queryString(query)
+						.field(FIELD_FIRST_SENTENCE_PLAIN_TEXT)
+						.boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
+				.should(QueryBuilders.queryString(query)
+						.field(FIELD_PLAIN_TEXT)
+						.boost(BOOST_FIELD_PLAIN_TEXT));
 				
 //		client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet(); 
 		

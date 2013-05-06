@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
 
 import javax.xml.bind.JAXBContext;
@@ -33,6 +34,20 @@ public class CclService {
 			chunkList = (ChunkList) um.unmarshal(new FileReader(file));
 			chunkList.setFileName(file.getName());
 			chunkList.setTitle(file.getName().replace("ccl-", "").replaceAll("\\.xml$", "").replace("32", " "));
+		} catch (Exception ex) {
+			LOGGER.error(ex, ex);
+		}
+		return chunkList;
+	}
+	
+	public ChunkList parseString(String string) {
+		Preconditions.checkNotNull(string);
+
+		ChunkList chunkList = null;
+		try {
+			JAXBContext context = JAXBContext.newInstance(ChunkList.class);
+			Unmarshaller um = context.createUnmarshaller();
+			chunkList = (ChunkList) um.unmarshal(new StringReader(string));
 		} catch (Exception ex) {
 			LOGGER.error(ex, ex);
 		}

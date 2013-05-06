@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import pl.wwiizt.ccl.service.CclService;
+import pl.wwiizt.feature.service.FeatureService;
 import pl.wwiizt.helpers.MeasuresHelper;
 import pl.wwiizt.search.service.SearchEngineService;
 
@@ -32,6 +33,7 @@ public class Main {
 	private final static String INDEX_NAME = "indexName";
 	private final static String PRINT_ALL = "printAll";
 	private final static String HELP = "help";
+	private final static String SELECT_FEATURES = "selectFeatures";
 
 	public final static int MAX_DOCS = 20;
 
@@ -57,8 +59,13 @@ public class Main {
 			formatter.printHelp("wwiizt", options);
 			System.exit(1);
 		}
-
+		
 		appContext = new ClassPathXmlApplicationContext(new String[] { "applicationContext.xml" });
+		
+		if (cmd.hasOption(SELECT_FEATURES)) {
+			FeatureService service = appContext.getBean(FeatureService.class);
+			service.extractBigramsAndSelectFeatures(cmd.getOptionValue(SELECT_FEATURES));
+		}
 
 		if (cmd.hasOption(CONVERT)) {
 			CclService service = appContext.getBean(CclService.class);
