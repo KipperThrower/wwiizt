@@ -10,7 +10,10 @@ import java.util.Scanner;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.springframework.stereotype.Service;
 
+
+@Service
 public class LinerWebservice {
 
 	private final static String ANALYZER_URL = "http://156.17.128.80/nlp/morphanalyser/document";

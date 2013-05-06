@@ -22,11 +22,12 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.search.SearchHit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import pl.wwiizt.ccl.model.ChunkList;
 import pl.wwiizt.ccl.service.CclService;
 import pl.wwiizt.json.service.JsonService;
-import pl.wwiizt.tagger.service.TaggerService;
+import pl.wwiizt.wordnet.WordnetJDBC;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -48,13 +49,13 @@ public class SearchEngineService {
 	public static final float BOOST_FIELD_PLAIN_TEXT = 1;
 
 	private static final Logger LOGGER = Logger.getLogger(SearchEngineService.class);
+	
+	private static final String[] STOP_LIST = new String[] { "?", "Co", "CO", "to", "jest", "Czy", "był", "Czym", "Gdzie", "coś", "być"}; 
 
 	@Autowired
 	private JsonService jsonService;
 	@Autowired
 	private CclService cclService;
-	@Autowired
-	private TaggerService taggerService;
 
 	private Node node;
 	private Client client;
@@ -69,10 +70,6 @@ public class SearchEngineService {
 		if (node != null) {
 			node.close();
 		}
-	}
-
-	public void destroy() {
-
 	}
 
 	public void index(ChunkList chunkList) {
@@ -111,11 +108,26 @@ public class SearchEngineService {
 		}
 	}
 
-	public List<String> search(String query, String indexName) {
-		Preconditions.checkNotNull(query);
+	public List<String> search(ChunkList cl, String indexName) {
+		Preconditions.checkNotNull(cl);
 
-		query = query.replace("?", "");
-		String baseQuery = taggerService.runTagger(query).getBasePlainText();
+		String query = cl.getPlainText();
+		if (!StringUtils.hasText(query)) {
+			query = "query";
+		}
+		for (String word : STOP_LIST) {
+			query = query.replace(word, "");
+		}
+		String baseQuery = cl.getBasePlainText();
+		
+		if (!StringUtils.hasText(baseQuery)) {
+			baseQuery = "query";
+		}
+		for (String word : STOP_LIST) {
+			baseQuery = baseQuery.replace(word, "");
+		}
+		
+		String relatives = getRelatives(baseQuery);
 		
 		QueryBuilder builder = QueryBuilders.boolQuery()
 				.should(QueryBuilders.queryString(baseQuery)
@@ -129,7 +141,10 @@ public class SearchEngineService {
 						.boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
 				.should(QueryBuilders.queryString(query)
 						.field(FIELD_PLAIN_TEXT)
-						.boost(BOOST_FIELD_PLAIN_TEXT));
+						.boost(BOOST_FIELD_PLAIN_TEXT))
+				.should(QueryBuilders.queryString(relatives)
+						.field(FIELD_BASE_PLAIN_TEXT)
+						.boost(BOOST_FIELD_BASE_PLAIN_TEXT));
 				
 //		client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet(); 
 		
@@ -149,6 +164,19 @@ public class SearchEngineService {
 			result.add(sh.getId());
 		}
 		return result;
+	}
+	
+	private String getRelatives(String baseText) {
+		StringBuffer sb = new StringBuffer();
+		String[] tokens = baseText.split(" ");
+		for (String token : tokens) {
+			List<String> list = WordnetJDBC.INSTANCE.getAllLexInRelationsExceptAntonims(token);
+			for (String s : list) {
+				sb.append(s);
+				sb.append(" ");
+			}
+		}
+		return sb.toString();
 	}
 
 	private class XmlFileFilter implements FileFilter {

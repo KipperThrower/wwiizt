@@ -18,9 +18,11 @@ import org.apache.commons.cli.PosixParser;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import pl.wwiizt.ccl.model.ChunkList;
 import pl.wwiizt.ccl.service.CclService;
 import pl.wwiizt.feature.service.FeatureService;
 import pl.wwiizt.helpers.MeasuresHelper;
+import pl.wwiizt.liner.LinerWebservice;
 import pl.wwiizt.search.service.SearchEngineService;
 
 public class Main {
@@ -38,7 +40,7 @@ public class Main {
 	public final static int MAX_DOCS = 20;
 
 	private static boolean printAll = false;
-	private static Map<String, List<String>> queryAndSupposedResults;
+	private static Map<ChunkList, List<String>> queryAndSupposedResults;
 
 	private static double precisionMean;
 	private static double recallMean;
@@ -116,9 +118,12 @@ public class Main {
 	}
 
 	private static void parseQueryAndSupposedResults(File file) {
+		CclService cclService = appContext.getBean(CclService.class);
+		LinerWebservice linerWebservice = appContext.getBean(LinerWebservice.class);
+		
 		Scanner scan = null;
-		queryAndSupposedResults = new HashMap<String, List<String>>();
-
+		queryAndSupposedResults = new HashMap<ChunkList, List<String>>();
+		int i = 0;
 		try {
 			scan = new Scanner(file);
 
@@ -133,7 +138,16 @@ public class Main {
 				String query = splittedLine[0];
 				String[] supposedResults = splittedLine[1].split(" ");
 
-				queryAndSupposedResults.put(query, Arrays.asList(supposedResults));
+				
+				File queryCcl = new File(file.getPath() + "Dir\\" + i + ".xml");
+				if (!queryCcl.exists()) {
+					String xml = linerWebservice.parse(query);
+					cclService.writeToFile(xml, queryCcl.getPath());
+				}
+				ChunkList cl = cclService.loadFile(queryCcl);
+				
+				queryAndSupposedResults.put(cl, Arrays.asList(supposedResults));
+				i++;
 			}
 
 		} catch (FileNotFoundException e) {
@@ -147,7 +161,7 @@ public class Main {
 	private static void search() {
 		SearchEngineService service = appContext.getBean(SearchEngineService.class);
 
-		for (Entry<String, List<String>> e : queryAndSupposedResults.entrySet()) {
+		for (Entry<ChunkList, List<String>> e : queryAndSupposedResults.entrySet()) {
 			List<String> hits = service.search(e.getKey(), indexName);
 
 			if (hits.size() > MAX_DOCS)
@@ -164,9 +178,9 @@ public class Main {
 		printFinalMeasures();
 	}
 
-	private static void printResultsAndMeasures(String query, List<String> supposedResults, List<String> searchResults, MeasuresHelper measures) {
+	private static void printResultsAndMeasures(ChunkList cl, List<String> supposedResults, List<String> searchResults, MeasuresHelper measures) {
 		System.out.println("\n=========================== Query: ");
-		System.out.println(query);
+		System.out.println(cl.getPlainText());
 		System.out.println("\n=========================== Supposed results: ");
 		printList(supposedResults);
 		System.out.println("\n=========================== Search results: ");

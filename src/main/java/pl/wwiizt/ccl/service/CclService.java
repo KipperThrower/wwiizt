@@ -14,6 +14,7 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 
+import pl.wwiizt.ccl.model.Chunk;
 import pl.wwiizt.ccl.model.ChunkList;
 
 import com.google.common.base.Preconditions;
@@ -27,7 +28,7 @@ public class CclService {
 	public ChunkList loadFile(File file) {
 		Preconditions.checkNotNull(file);
 
-		ChunkList chunkList = null;
+		ChunkList chunkList = new ChunkList();
 		try {
 			JAXBContext context = JAXBContext.newInstance(ChunkList.class);
 			Unmarshaller um = context.createUnmarshaller();
@@ -118,7 +119,7 @@ public class CclService {
 		}
 	}
 	
-	private void writeToFile(String content, String file) {
+	public void writeToFile(String content, String file) {
 		FileWriter fw = null;
 		try {
 			fw = new FileWriter(file);

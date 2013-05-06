@@ -19,6 +19,7 @@
 		<property name="locations">
 			<list>
 				<value>classpath:conf/ctx.properties</value>
+				<value>classpath:connection.properties</value>
 			</list>
 		</property>
 	</bean>

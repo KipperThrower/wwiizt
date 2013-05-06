@@ -68,14 +68,14 @@ public class ChunkList {
 	
 	public String getFirstSentencePlainText() {
 		if (!CollectionUtils.isEmpty(chunkList)) {
-			return chunkList.get(0).getFirstSentencePlainText();
+			return chunkList.get(1).getFirstSentencePlainText();
 		}
 		return "";
 	}
 	
 	public String getFirstSentenceBasePlainText() {
 		if (!CollectionUtils.isEmpty(chunkList)) {
-			return chunkList.get(0).getFirstSentenceBasePlainText();
+			return chunkList.get(1).getFirstSentenceBasePlainText();
 		}
 		return "";
 	}
