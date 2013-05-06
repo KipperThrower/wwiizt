@@ -56,7 +56,7 @@ public class MeasuresHelper {
 	}
 
 	private void countPrecision() {
-		precision = (double) relevantDocuments.size() / (double) actualResults.size();
+		precision = (double) relevantDocuments.size() / (double) (actualResults.size() > 0 ? actualResults.size() : 1);
 	}
 
 	private void countRecall() {
