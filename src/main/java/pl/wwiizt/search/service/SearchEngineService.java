@@ -4,10 +4,7 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
@@ -15,7 +12,6 @@ import javax.annotation.PostConstruct;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
@@ -77,7 +73,7 @@ public class SearchEngineService {
 	public void index(ChunkList chunkList) {
 		Preconditions.checkNotNull(chunkList);
 
-		IndexResponse response = client.prepareIndex(INDEX_NAME, TYPE_NAME, chunkList.getFileName()).setSource(jsonService.getJson(chunkList)).execute()
+		client.prepareIndex(INDEX_NAME, TYPE_NAME, chunkList.getFileName()).setSource(jsonService.getJson(chunkList)).execute()
 				.actionGet();
 	}
 
@@ -150,9 +146,9 @@ public class SearchEngineService {
 				.must(QueryBuilders.queryString(baseQuery).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT))
 				.must(QueryBuilders.queryString(query).field(FIELD_FIRST_SENTENCE_PLAIN_TEXT).boost(BOOST_FIELD_FIRST_SENTENCE_PLAIN_TEXT))
 				.must(QueryBuilders.queryString(query).field(FIELD_PLAIN_TEXT).boost(BOOST_FIELD_PLAIN_TEXT))
-				.must(QueryBuilders.queryString(relatives).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT));
+				.should(QueryBuilders.queryString(relatives).field(FIELD_BASE_PLAIN_TEXT).boost(BOOST_FIELD_BASE_PLAIN_TEXT))
+				;
 
-		//		client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet(); 
 
 		SearchResponse response = client.prepareSearch(indexName).setTypes(TYPE_NAME).setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setQuery(builder)
 				.setFrom(0).setSize(pl.wwiizt.main.Main.MAX_DOCS).setExplain(true).execute().actionGet();
@@ -168,7 +164,7 @@ public class SearchEngineService {
 		StringBuffer sb = new StringBuffer();
 		String[] tokens = baseText.split(" ");
 		for (String token : tokens) {
-			List<String> list = WordnetJDBC.INSTANCE.getAllLexInRelationsExceptAntonims(token);
+			List<String> list = WordnetJDBC.INSTANCE.getLexFromTheSameSynset(token);//getAllLexInRelationsExceptAntonims(token);
 			for (String s : list) {
 				sb.append(s);
 				sb.append(" ");

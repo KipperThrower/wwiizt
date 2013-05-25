@@ -1,3 +1,4 @@
+
 package pl.wwiizt.ccl.model;
 
 import java.util.List;

@@ -2,7 +2,6 @@ package pl.wwiizt.main;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,7 +50,7 @@ public class Main {
 	private static double fmeasureMean;
 	private static double mrr;
 
-	private static Set<String> stopList = new HashSet<>();// = new String[] { "?", "Co", "CO", "to", "jest", "Czy", "był", "Czym", "Gdzie", "coś", "być"}; 
+	private static Set<String> stopList = new HashSet<>();
 	
 	private static String indexName;
 	
@@ -176,7 +175,7 @@ public class Main {
 			if (hits.size() > MAX_DOCS)
 				hits = hits.subList(0, MAX_DOCS);
 
-			MeasuresHelper measures = new MeasuresHelper(e.getValue(), hits, MAX_DOCS);
+			MeasuresHelper measures = new MeasuresHelper(e.getValue(), hits, hits.size());
 
 			saveMeasures(measures);
 

@@ -14,7 +14,6 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 
-import pl.wwiizt.ccl.model.Chunk;
 import pl.wwiizt.ccl.model.ChunkList;
 
 import com.google.common.base.Preconditions;

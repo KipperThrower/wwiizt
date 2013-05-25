@@ -60,7 +60,7 @@ public class MeasuresHelper {
 	}
 
 	private void countRecall() {
-		recall = (double) relevantDocuments.size() / 1.0;
+		recall = (double) relevantDocuments.size() / cutoff;
 	}
 
 	private void countFMeasure() {
