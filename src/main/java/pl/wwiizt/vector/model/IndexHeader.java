@@ -30,9 +30,11 @@ public class IndexHeader {
 
 		headers = Sets.newTreeSet();
 		String[] array = content.split(CRLF);
+
 		for (String s : array) {
 			headers.add(s);
 		}
+
 		headersList = getList();
 		convertedToList = true;
 	}
@@ -42,17 +44,20 @@ public class IndexHeader {
 			headersList = getList();
 			convertedToList = true;
 		}
+
 		if (number < headersList.size()) {
 			return headersList.get(number);
 		}
+
 		return null;
 	}
-	
+
 	public int getHeaderNumber(String header) {
 		if (!convertedToList) {
 			headersList = getList();
 			convertedToList = true;
 		}
+
 		return headersList.indexOf(header);
 	}
 

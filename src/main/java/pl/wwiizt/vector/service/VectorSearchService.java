@@ -3,6 +3,7 @@ package pl.wwiizt.vector.service;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,9 +41,12 @@ public class VectorSearchService {
 		LOGGER.info("Building header");
 
 		IndexHeader header = new IndexHeader();
+		
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
+			
 			if (files != null) {
+				
 				for (File file : files) {
 					ChunkList cl = cclService.loadFile(file);
 
@@ -63,6 +67,7 @@ public class VectorSearchService {
 		}
 
 		time = System.currentTimeMillis();
+		
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
 			if (files != null) {
@@ -86,24 +91,28 @@ public class VectorSearchService {
 
 	}
 
-	public List<Hint> search(File indexDir, String file) throws IOException {
+	public List<Hint> search(File indexDir, String file)  {
 		ChunkList cl = cclService.loadFile(file);
 		IndexHeader header = readHeader(new File(indexDir.getAbsoluteFile() + File.separator + "header.csv"));
 		IndexRecord searchedIR = new IndexRecord();
 		searchedIR.parseFromFile(file, cl.getBasePlainText(), header);
 
 		List<Hint> hints = Lists.newArrayList();
-		BufferedReader br = new BufferedReader(new FileReader(indexDir.getAbsoluteFile() + File.separator + "index.csv"));
-		String line = null;
-		while ((line = br.readLine()) != null) {
-			IndexRecord ir = new IndexRecord();
-			ir.parseFromCSV(line);
-			Hint hint = new Hint();
-			hint.setPath(ir.getFilePath());
-			hint.setRank(ir.compare(searchedIR));
-			hints.add(hint);
+		
+		
+		try(Scanner scan = new Scanner(new File(indexDir.getAbsoluteFile() + File.separator + "index.csv"))) {
+			while(scan.hasNextLine()) {
+				IndexRecord ir = new IndexRecord();
+				ir.parseFromCSV(scan.nextLine());
+				Hint hint = new Hint();
+				hint.setPath(ir.getFilePath());
+				hint.setRank(ir.compare(searchedIR));
+				hints.add(hint);
+			}
+		} catch (FileNotFoundException e) {
+			LOGGER.error("[search]", e);
 		}
-		br.close();
+		
 		Collections.sort(hints);
 
 		return hints;
@@ -118,7 +127,7 @@ public class VectorSearchService {
 				sb.append(scanner.nextLine());
 				sb.append("\n");
 			}
-		} catch (Exception e) {
+		} catch (FileNotFoundException e) {
 			LOGGER.error("[readHeader]", e);
 		}
 
