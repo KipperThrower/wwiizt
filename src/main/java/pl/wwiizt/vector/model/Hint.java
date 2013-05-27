@@ -1,5 +1,7 @@
 package pl.wwiizt.vector.model;
 
+import com.google.common.primitives.Doubles;
+
 public class Hint implements Comparable<Hint> {
 
 	private double rank;
@@ -26,7 +28,7 @@ public class Hint implements Comparable<Hint> {
 		if (rank == o.rank) {
 			return 0;
 		}
-		return rank < o.rank ? 1 : -1;
+		return -Doubles.compare(rank, o.rank);
 	}
 	
 	@Override

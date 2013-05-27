@@ -2,6 +2,8 @@ package pl.wwiizt.vector.model;
 
 import java.util.List;
 
+import pl.wwizt.vector.distances.Distance;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
@@ -60,18 +62,8 @@ public class IndexRecord {
 		
 	}
 	
-	public double compare(IndexRecord that) {
-		double measure = 0;
-		double v1 = 0;
-		double v2 = 0;
-		int size = fields.size();
-		for (int i = 0; i < size; i++) {
-			measure += this.fields.get(i) * that.fields.get(i);
-			v1 += this.fields.get(i) * this.fields.get(i);
-			v2 += that.fields.get(i) * that.fields.get(i);
-		}
-		measure /= Math.sqrt(v1) * Math.sqrt(v2);
-		return measure;
+	public double compare(IndexRecord that, Distance distance) {
+		return distance.measureDistance(this.fields, that.fields);
 	}
 	
 	@Override

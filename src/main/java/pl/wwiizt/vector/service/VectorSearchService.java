@@ -1,13 +1,13 @@
 package pl.wwiizt.vector.service;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
 
 import javax.annotation.PostConstruct;
 
@@ -15,15 +15,16 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-
 import pl.wwiizt.ccl.model.ChunkList;
 import pl.wwiizt.ccl.service.CclService;
 import pl.wwiizt.main.Main;
 import pl.wwiizt.vector.model.Hint;
 import pl.wwiizt.vector.model.IndexHeader;
 import pl.wwiizt.vector.model.IndexRecord;
+import pl.wwizt.vector.distances.Distance;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 @Service
 public class VectorSearchService {
@@ -39,13 +40,18 @@ public class VectorSearchService {
 
 		String pathToIndexDir = dir.getAbsolutePath() + File.separator
 				+ "index" + File.separator;
+
 		long time = System.currentTimeMillis();
 
 		LOGGER.info("Building header");
+
 		IndexHeader header = new IndexHeader();
+		
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
+			
 			if (files != null) {
+				
 				for (File file : files) {
 					ChunkList cl = cclService.loadFile(file);
 
@@ -56,22 +62,21 @@ public class VectorSearchService {
 						}
 					}
 				}
-				FileWriter fw = new FileWriter(new File(pathToIndexDir
-						+ "header.csv"));
+				FileWriter fw = new FileWriter(new File(pathToIndexDir + "header.csv"));
 				fw.write(header.toString());
 				fw.close();
 
-				LOGGER.info("Header build. Time = "
-						+ (System.currentTimeMillis() - time) + "ms");
+				if (LOGGER.isInfoEnabled())
+					LOGGER.info("Header build. Time = " + (System.currentTimeMillis() - time) + "ms");
 			}
 		}
 
 		time = System.currentTimeMillis();
+		
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
 			if (files != null) {
-				FileWriter fw = new FileWriter(new File(pathToIndexDir
-						+ "index.csv"));
+				FileWriter fw = new FileWriter(new File(pathToIndexDir + "index.csv"));
 				for (File file : files) {
 					ChunkList cl = cclService.loadFile(file);
 
@@ -84,14 +89,15 @@ public class VectorSearchService {
 					}
 				}
 				fw.close();
-				LOGGER.info("Files indexed. Time = "
-						+ (System.currentTimeMillis() - time) + "ms");
+
+				if (LOGGER.isInfoEnabled())
+					LOGGER.info("Files indexed. Time = " + (System.currentTimeMillis() - time) + "ms");
 			}
 		}
 
 	}
 
-	public List<Hint> search(File indexDir, String file) throws IOException {
+	public List<Hint> search(File indexDir, String file, Distance distance)  {
 		ChunkList cl = cclService.loadFile(file);
 		IndexHeader header = readHeader(new File(indexDir.getAbsoluteFile()
 				+ File.separator + "header.csv"));
@@ -99,34 +105,41 @@ public class VectorSearchService {
 		searchedIR.parseFromFile(file, cl.getBasePlainText(), header);
 
 		List<Hint> hints = Lists.newArrayList();
-		BufferedReader br = new BufferedReader(new FileReader(
-				indexDir.getAbsoluteFile() + File.separator + "index.csv"));
-		String line = null;
-		while ((line = br.readLine()) != null) {
-			IndexRecord ir = new IndexRecord();
-			ir.parseFromCSV(line);
-			Hint hint = new Hint();
-			hint.setPath(ir.getFilePath());
-			hint.setRank(ir.compare(searchedIR));
-			hints.add(hint);
+		
+		
+		try(Scanner scan = new Scanner(new File(indexDir.getAbsoluteFile() + File.separator + "index.csv"))) {
+			while(scan.hasNextLine()) {
+				IndexRecord ir = new IndexRecord();
+				ir.parseFromCSV(scan.nextLine());
+				Hint hint = new Hint();
+				hint.setPath(ir.getFilePath());
+				hint.setRank(ir.compare(searchedIR, distance));
+				hints.add(hint);
+			}
+		} catch (FileNotFoundException e) {
+			LOGGER.error("[search]", e);
 		}
-		br.close();
+		
 		Collections.sort(hints);
-		hints = hints.subList(0, Main.MAX_DOCS);
+
 		return hints;
 	}
 
-	public IndexHeader readHeader(File path) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		BufferedReader br = new BufferedReader(new FileReader(path));
-		String line = null;
-		while ((line = br.readLine()) != null) {
-			sb.append(line);
-			sb.append("\n");
-		}
-		br.close();
+	private IndexHeader readHeader(File path) {
 		IndexHeader ir = new IndexHeader();
+		StringBuilder sb = new StringBuilder();
+
+		try (Scanner scanner = new Scanner(path)) {
+			while (scanner.hasNextLine()) {
+				sb.append(scanner.nextLine());
+				sb.append("\n");
+			}
+		} catch (FileNotFoundException e) {
+			LOGGER.error("[readHeader]", e);
+		}
+
 		ir.parse(sb.toString());
+		
 		return ir;
 	}
 
