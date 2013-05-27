@@ -26,7 +26,7 @@ public class Hint implements Comparable<Hint> {
 		if (rank == o.rank) {
 			return 0;
 		}
-		return rank > o.rank ? 1 : -1;
+		return rank < o.rank ? 1 : -1;
 	}
 	
 	@Override

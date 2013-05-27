@@ -53,7 +53,7 @@ public class IndexRecord {
 			if (number != -1) {
 				Double count = fields.get(number);
 				count++;
-				fields.set(i, count);
+				fields.set(number, count);
 			}
 		}
 		normalize();
@@ -62,11 +62,15 @@ public class IndexRecord {
 	
 	public double compare(IndexRecord that) {
 		double measure = 0;
+		double v1 = 0;
+		double v2 = 0;
 		int size = fields.size();
 		for (int i = 0; i < size; i++) {
 			measure += this.fields.get(i) * that.fields.get(i);
+			v1 += this.fields.get(i) * this.fields.get(i);
+			v2 += that.fields.get(i) * that.fields.get(i);
 		}
-		measure = Math.sqrt(measure);
+		measure /= Math.sqrt(v1) * Math.sqrt(v2);
 		return measure;
 	}
 	
