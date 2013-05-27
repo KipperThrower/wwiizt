@@ -1,5 +1,6 @@
 package pl.wwiizt.vector.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -66,11 +67,7 @@ public class IndexHeader {
 	}
 
 	private List<String> getList() {
-		List<String> list = Lists.newArrayList();
-		for (String s : headers) {
-			list.add(s);
-		}
-		return list;
+		return new ArrayList<>(headers);
 	}
 
 }
