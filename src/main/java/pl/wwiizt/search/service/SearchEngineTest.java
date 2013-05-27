@@ -1,8 +1,5 @@
 package pl.wwiizt.search.service;
 
-import java.io.File;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,15 +15,13 @@ public class SearchEngineTest {
 	
 //	@PostConstruct
 	public void test() {
-		final String PATH = "D:\\do szkoły\\Wydobywanie wiedzy i informacji z tekstu\\subwiki-with-questions";
-		final String TEXT_QUERY = "stany zjednoczone";
+//		final String PATH = "D:\\do szkoły\\Wydobywanie wiedzy i informacji z tekstu\\subwiki-with-questions";
+//		final String TEXT_QUERY = "stany zjednoczone";
 		
-		searchEngineService.index(new File(PATH), "test");
+//		searchEngineService.index(new File(PATH), "test");
 		
-		List<String> hits = searchEngineService.search(TEXT_QUERY, "test");
-		for (String hit : hits) {
-			System.out.println(hit);
-		}
+		/*List<String> hits = searchEngineService.search(TEXT_QUERY, "test");
+		System.out.println(hits);*/
 	}
 	
 }
