@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,17 +109,21 @@ public class VectorSearchService {
 		return hints;
 	}
 
-	public IndexHeader readHeader(File path) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		BufferedReader br = new BufferedReader(new FileReader(path));
-		String line = null;
-		while ((line = br.readLine()) != null) {
-			sb.append(line);
-			sb.append("\n");
-		}
-		br.close();
+	private IndexHeader readHeader(File path) {
 		IndexHeader ir = new IndexHeader();
+		StringBuilder sb = new StringBuilder();
+
+		try (Scanner scanner = new Scanner(path)) {
+			while (scanner.hasNextLine()) {
+				sb.append(scanner.nextLine());
+				sb.append("\n");
+			}
+		} catch (Exception e) {
+			LOGGER.error("[readHeader]", e);
+		}
+
 		ir.parse(sb.toString());
+		
 		return ir;
 	}
 
