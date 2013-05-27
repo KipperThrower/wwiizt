@@ -32,12 +32,12 @@ public class VectorSearchService {
 
 	public void index(File dir) throws IOException {
 		Preconditions.checkNotNull(dir);
-		
-		String pathToIndexDir = dir.getAbsolutePath() + File.separator
-				+ "index" + File.separator;
+
+		String pathToIndexDir = dir.getAbsolutePath() + File.separator + "index" + File.separator;
 		long time = System.currentTimeMillis();
 
 		LOGGER.info("Building header");
+
 		IndexHeader header = new IndexHeader();
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
@@ -52,13 +52,12 @@ public class VectorSearchService {
 						}
 					}
 				}
-				FileWriter fw = new FileWriter(new File(pathToIndexDir
-						+ "header.csv"));
+				FileWriter fw = new FileWriter(new File(pathToIndexDir + "header.csv"));
 				fw.write(header.toString());
 				fw.close();
 
-				LOGGER.info("Header build. Time = "
-						+ (System.currentTimeMillis() - time) + "ms");
+				if (LOGGER.isInfoEnabled())
+					LOGGER.info("Header build. Time = " + (System.currentTimeMillis() - time) + "ms");
 			}
 		}
 
@@ -66,8 +65,7 @@ public class VectorSearchService {
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
 			if (files != null) {
-				FileWriter fw = new FileWriter(new File(pathToIndexDir
-						+ "index.csv"));
+				FileWriter fw = new FileWriter(new File(pathToIndexDir + "index.csv"));
 				for (File file : files) {
 					ChunkList cl = cclService.loadFile(file);
 
@@ -79,8 +77,9 @@ public class VectorSearchService {
 					}
 				}
 				fw.close();
-				LOGGER.info("Files indexed. Time = "
-						+ (System.currentTimeMillis() - time) + "ms");
+
+				if (LOGGER.isInfoEnabled())
+					LOGGER.info("Files indexed. Time = " + (System.currentTimeMillis() - time) + "ms");
 			}
 		}
 
@@ -91,7 +90,7 @@ public class VectorSearchService {
 		IndexHeader header = readHeader(new File(indexDir.getAbsoluteFile() + File.separator + "header.csv"));
 		IndexRecord searchedIR = new IndexRecord();
 		searchedIR.parseFromFile(file, cl.getBasePlainText(), header);
-		
+
 		List<Hint> hints = Lists.newArrayList();
 		BufferedReader br = new BufferedReader(new FileReader(indexDir.getAbsoluteFile() + File.separator + "index.csv"));
 		String line = null;
@@ -105,10 +104,10 @@ public class VectorSearchService {
 		}
 		br.close();
 		Collections.sort(hints);
-		
+
 		return hints;
 	}
-	
+
 	public IndexHeader readHeader(File path) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		BufferedReader br = new BufferedReader(new FileReader(path));
