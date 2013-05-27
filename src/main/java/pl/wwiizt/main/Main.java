@@ -29,6 +29,8 @@ import pl.wwiizt.search.service.SearchEngineService;
 import pl.wwiizt.vector.model.Hint;
 import pl.wwiizt.vector.service.VectorSearchService;
 import pl.wwizt.vector.distances.CosineDistance;
+import pl.wwizt.vector.distances.Distance;
+import pl.wwizt.vector.distances.EuclidesDistance;
 
 public class Main {
 
@@ -44,6 +46,7 @@ public class Main {
 	private final static String HELP = "help";
 	private final static String SELECT_FEATURES = "selectFeatures";
 	private final static String STOP_LIST = "stoplist";
+	private final static String EUCLIDES_DISTANCE = "euclidesDistance";
 	
 	public final static int MAX_DOCS = 20;
 
@@ -103,7 +106,10 @@ public class Main {
 		
 		if (cmd.hasOption(SEARCH_VECTOR) && cmd.hasOption(DOCUMENT)) {
 			printAll = cmd.hasOption(PRINT_ALL);
-			searchVector(cmd.getOptionValue(SEARCH_VECTOR), cmd.getOptionValue(DOCUMENT));
+			
+			Distance distance = cmd.hasOption(EUCLIDES_DISTANCE) ? new EuclidesDistance() : new CosineDistance();
+				
+			searchVector(cmd.getOptionValue(SEARCH_VECTOR), cmd.getOptionValue(DOCUMENT), distance);
 		}
 		
 		service.closeNode();
@@ -120,6 +126,7 @@ public class Main {
 		options.addOption(PRINT_ALL, "p", false, "print all results");
 		options.addOption(INDEX_NAME, true, "index name");
 		options.addOption(STOP_LIST, true, "stop list path");
+		options.addOption(EUCLIDES_DISTANCE, false, "use Euclides distance (cosine distance otherwise)");
 		options.addOption(HELP, "h", false, "help");
 
 		return options;
@@ -178,9 +185,9 @@ public class Main {
 		scan.close();
 	}
 	
-	private static void searchVector(String dir, String docPath) {
+	private static void searchVector(String dir, String docPath, Distance distance) {
 		VectorSearchService service = appContext.getBean(VectorSearchService.class);
-		List<Hint> hints = service.searchWithoutIndex(new File(dir), docPath, new CosineDistance(), stopList);
+		List<Hint> hints = service.searchWithoutIndex(new File(dir), docPath, distance, stopList);
 		for(Hint hint : hints) {
 			System.out.println(hint);
 		}
