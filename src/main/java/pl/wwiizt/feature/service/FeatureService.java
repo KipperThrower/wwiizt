@@ -223,6 +223,10 @@ public class FeatureService {
 						}
 						writer.write("\n");
 						fw1.write("\n");
+						
+						writer.flush();
+						fw1.flush();
+
 						line = reader.readLine();
 					}
 				}
