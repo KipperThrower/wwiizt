@@ -26,12 +26,17 @@ import pl.wwiizt.feature.service.FeatureService;
 import pl.wwiizt.helpers.MeasuresHelper;
 import pl.wwiizt.liner.LinerWebservice;
 import pl.wwiizt.search.service.SearchEngineService;
+import pl.wwiizt.vector.model.Hint;
+import pl.wwiizt.vector.service.VectorSearchService;
+import pl.wwizt.vector.distances.CosineDistance;
 
 public class Main {
 
 	private static ApplicationContext appContext;
 
 	private final static String SEARCH = "search";
+	private final static String SEARCH_VECTOR = "searchVector";
+	private final static String DOCUMENT = "doc";
 	private final static String INDEX = "index";
 	private final static String CONVERT = "convert";
 	private final static String INDEX_NAME = "indexName";
@@ -96,6 +101,11 @@ public class Main {
 			search();
 		}
 		
+		if (cmd.hasOption(SEARCH_VECTOR) && cmd.hasOption(DOCUMENT)) {
+			printAll = cmd.hasOption(PRINT_ALL);
+			searchVector(cmd.getOptionValue(SEARCH_VECTOR), cmd.getOptionValue(DOCUMENT));
+		}
+		
 		service.closeNode();
 	}
 
@@ -103,6 +113,8 @@ public class Main {
 		Options options = new Options();
 
 		options.addOption(SEARCH, "s", true, "search query");
+		options.addOption(SEARCH_VECTOR, "v", true, "dir path");
+		options.addOption(DOCUMENT, "d", true, "doc path");
 		options.addOption(INDEX, "i", true, "index path");
 		options.addOption(CONVERT, "i", true, "convert path");
 		options.addOption(PRINT_ALL, "p", false, "print all results");
@@ -164,6 +176,15 @@ public class Main {
 		}
 
 		scan.close();
+	}
+	
+	private static void searchVector(String dir, String docPath) {
+		VectorSearchService service = appContext.getBean(VectorSearchService.class);
+		List<Hint> hints = service.searchWithoutIndex(new File(dir), docPath, new CosineDistance(), stopList);
+		for(Hint hint : hints) {
+			System.out.println(hint);
+		}
+		
 	}
 
 	private static void search() {

@@ -38,6 +38,27 @@ public class IndexHeader {
 		headersList = getList();
 		convertedToList = true;
 	}
+	
+	public void parse(String content1, String content2) {
+		Preconditions.checkNotNull(content1);
+		Preconditions.checkNotNull(content2);
+
+		headers = Sets.newTreeSet();
+		String[] array = content1.split(" ");
+
+		for (String s : array) {
+			headers.add(s);
+		}
+		
+		array = content2.split(" ");
+
+		for (String s : array) {
+			headers.add(s);
+		}
+
+		headersList = getList();
+		convertedToList = true;
+	}
 
 	public String getHeaderString(int number) {
 		if (!convertedToList) {
