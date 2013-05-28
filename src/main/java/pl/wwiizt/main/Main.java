@@ -17,6 +17,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.elasticsearch.common.collect.Lists;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -37,17 +38,26 @@ public class Main {
 	private static ApplicationContext appContext;
 
 	private final static String SEARCH = "search";
-	private final static String SEARCH_VECTOR = "searchVector";
-	private final static String DOCUMENT = "doc";
 	private final static String INDEX = "index";
 	private final static String CONVERT = "convert";
-	private final static String INDEX_NAME = "indexName";
+	private final static String INDEX_NAME = "indexName"; //tez przy modelu wektorowym
 	private final static String PRINT_ALL = "printAll";
 	private final static String HELP = "help";
 	private final static String SELECT_FEATURES = "selectFeatures";
 	private final static String STOP_LIST = "stoplist";
-	private final static String EUCLIDES_DISTANCE = "euclidesDistance";
+
 	
+	//do modelu wektorowego 
+	private final static String EUCLIDES_DISTANCE = "euclidesDistance";
+	private final static String USE_SYNONYMS = "useSynonyms";
+	private final static String TFIDF = "tfidf";
+
+
+	private final static String INDEX_VECTORS = "indexVectors"; //sciezka do indeksowania dokumentow, do uzycia tez INDEX_NAME
+	private final static String SEARCH_VECTOR = "searchVector"; //dokument do szukania
+	private final static String DOCUMENTS_DIR = "documentsDir"; //dokumenty nie zaindeksowane, do wyszukania
+	private final static String INDEXED_VECTORS_PATH = "indexedVectors"; //dokumenty zaindeksowane, do wyszukiwania
+
 	public final static int MAX_DOCS = 20;
 
 	private static boolean printAll = false;
@@ -59,9 +69,9 @@ public class Main {
 	private static double mrr;
 
 	private static Set<String> stopList = new HashSet<>();
-	
+
 	private static String indexName;
-	
+
 	/**
 	 * @param args
 	 */
@@ -98,35 +108,69 @@ public class Main {
 			initStopList(cmd.getOptionValue(STOP_LIST));
 		}
 
+		printAll = cmd.hasOption(PRINT_ALL);
+
 		if (cmd.hasOption(SEARCH)) {
-			printAll = cmd.hasOption(PRINT_ALL);
 			parseQueryAndSupposedResults(new File(cmd.getOptionValue(SEARCH)));
 			search();
 		}
+
+		if (cmd.hasOption(INDEX_VECTORS))
+			handleVectorIndex(cmd);
+
+		if (cmd.hasOption(SEARCH_VECTOR))
+			handleVectorSearch(cmd);
+
+		service.closeNode();
+	}
+
+	private static void handleVectorIndex(CommandLine cmd) {
+		String indexName = cmd.hasOption(INDEX_NAME) ? cmd.getOptionValue(INDEX_NAME) : "index";
+		String inputPath = cmd.getOptionValue(INDEX_VECTORS);
+
+		VectorSearchService service = appContext.getBean(VectorSearchService.class);
+		service.index(new File(inputPath), indexName);
+	}
+
+	private static void handleVectorSearch(CommandLine cmd) {
+		Distance distance = cmd.hasOption(EUCLIDES_DISTANCE) ? new EuclidesDistance() : new CosineDistance();
+		boolean tfidf = cmd.hasOption(TFIDF);
+		boolean useSynonyms = cmd.hasOption(USE_SYNONYMS);
+
+		VectorSearchService service = appContext.getBean(VectorSearchService.class);
+		List<Hint> hints = Lists.newArrayList();
 		
-		if (cmd.hasOption(SEARCH_VECTOR) && cmd.hasOption(DOCUMENT)) {
-			printAll = cmd.hasOption(PRINT_ALL);
-			
-			Distance distance = cmd.hasOption(EUCLIDES_DISTANCE) ? new EuclidesDistance() : new CosineDistance();
-				
-			searchVector(cmd.getOptionValue(SEARCH_VECTOR), cmd.getOptionValue(DOCUMENT), distance);
+		if (cmd.hasOption(INDEXED_VECTORS_PATH)) {
+			hints = service.search(new File(cmd.getOptionValue(INDEXED_VECTORS_PATH)), cmd.getOptionValue(SEARCH_VECTOR), distance, tfidf, useSynonyms);
+		} else if (cmd.hasOption(DOCUMENTS_DIR)) {
+			hints = service.searchWithoutIndex(new File(cmd.getOptionValue(DOCUMENTS_DIR)), cmd.getOptionValue(SEARCH_VECTOR), distance, stopList, tfidf, useSynonyms);
 		}
 		
-		service.closeNode();
+		for(Hint hint : hints) {
+			System.out.println(hint);
+		}
+		
 	}
 
 	private static Options getOptions() {
 		Options options = new Options();
 
 		options.addOption(SEARCH, "s", true, "search query");
-		options.addOption(SEARCH_VECTOR, "v", true, "dir path");
-		options.addOption(DOCUMENT, "d", true, "doc path");
 		options.addOption(INDEX, "i", true, "index path");
 		options.addOption(CONVERT, "i", true, "convert path");
 		options.addOption(PRINT_ALL, "p", false, "print all results");
 		options.addOption(INDEX_NAME, true, "index name");
 		options.addOption(STOP_LIST, true, "stop list path");
+
 		options.addOption(EUCLIDES_DISTANCE, false, "use Euclides distance (cosine distance otherwise)");
+		options.addOption(USE_SYNONYMS, false, "use synonyms");
+		options.addOption(TFIDF, false, "use tf/idf");
+
+		options.addOption(INDEX_VECTORS, true, "folder path of documents to index");
+		options.addOption(SEARCH_VECTOR, "v", true, "ccl to search similar documents");
+		options.addOption(DOCUMENTS_DIR, true, "directory of unindexed documents to find similar");
+		options.addOption(INDEXED_VECTORS_PATH, true, "directory of indexed documents to find similar");
+
 		options.addOption(HELP, "h", false, "help");
 
 		return options;
@@ -148,7 +192,7 @@ public class Main {
 	private static void parseQueryAndSupposedResults(File file) {
 		CclService cclService = appContext.getBean(CclService.class);
 		LinerWebservice linerWebservice = appContext.getBean(LinerWebservice.class);
-		
+
 		Scanner scan = null;
 		queryAndSupposedResults = new HashMap<ChunkList, List<String>>();
 		int i = 0;
@@ -165,14 +209,13 @@ public class Main {
 				String query = splittedLine[0];
 				String[] supposedResults = splittedLine[1].split(" ");
 
-				
 				File queryCcl = new File(file.getPath() + "Dir" + File.separator + i + ".xml");
 				if (!queryCcl.exists()) {
 					String xml = linerWebservice.parse(query);
 					cclService.writeToFile(xml, queryCcl.getPath());
 				}
 				ChunkList cl = cclService.loadFile(queryCcl);
-				
+
 				queryAndSupposedResults.put(cl, Arrays.asList(supposedResults));
 				i++;
 			}
@@ -183,15 +226,6 @@ public class Main {
 		}
 
 		scan.close();
-	}
-	
-	private static void searchVector(String dir, String docPath, Distance distance) {
-		VectorSearchService service = appContext.getBean(VectorSearchService.class);
-		List<Hint> hints = service.searchWithoutIndex(new File(dir), docPath, distance, stopList);
-		for(Hint hint : hints) {
-			System.out.println(hint);
-		}
-		
 	}
 
 	private static void search() {
@@ -242,8 +276,8 @@ public class Main {
 		System.out.println("Precision: " + measures.getPrecision());
 		System.out.println("Recall: " + measures.getRecall());
 		System.out.println("F-score: " + measures.getFmeasure());
-//		System.out.println("Recall_rank: " + measures.getRecallRank());
-//		System.out.println("Precision_log: " + measures.getLogarithmicPrecision());
+		//		System.out.println("Recall_rank: " + measures.getRecallRank());
+		//		System.out.println("Precision_log: " + measures.getLogarithmicPrecision());
 	}
 
 	private static void saveMeasures(MeasuresHelper measures) {
@@ -269,14 +303,13 @@ public class Main {
 		System.out.println("\n\nF-measure mean: " + fmeasureMean / (double) size);
 		System.out.println("\n\nMRR: " + mrr / (double) size);
 	}
-	
-	
+
 	private static void initStopList(String path) {
-		try (Scanner scanner = new Scanner(new File(path))){
-			while(scanner.hasNext()) {
+		try (Scanner scanner = new Scanner(new File(path))) {
+			while (scanner.hasNext()) {
 				stopList.add(scanner.next().trim());
 			}
-		
+
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
