@@ -59,7 +59,11 @@ public class IndexRecord {
 				fields.set(number, count);
 			}
 		}
-		normalize();
+		
+		if (tfidf)
+			countLogarithms();
+		else
+			normalize();
 		
 	}
 	
@@ -83,11 +87,22 @@ public class IndexRecord {
 	
 	private void normalize() {
 		int size = fields.size();
+	
 		for (int i = 0; i < size; i++) {
 			double d = fields.get(i);
 			fields.set(i, d / size);
 		}
 	}
+	
+	private void countLogarithms() {
+		int size = fields.size();
+		
+		for (int i = 0; i < size; i++) {
+			double d = Math.log10(1.0 + fields.get(i));
+			fields.set(i, d);
+		}
+	}
+	
 	
 	private void initFields(int size) {
 		fields = Lists.newArrayList();
