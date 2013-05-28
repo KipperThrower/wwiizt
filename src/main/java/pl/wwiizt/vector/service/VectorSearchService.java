@@ -123,7 +123,7 @@ public class VectorSearchService {
 			LOGGER.error("[search]", e);
 		}
 
-		Collections.sort(hints);
+		Collections.sort(hints, distance.getComparator());
 		hints = hints.subList(0, Main.MAX_DOCS);
 		return hints;
 	}
@@ -168,7 +168,7 @@ public class VectorSearchService {
 			}
 		}
 
-		Collections.sort(hints);
+		Collections.sort(hints, distance.getComparator());
 		hints = hints.subList(0, Main.MAX_DOCS);
 		return hints;
 	}
