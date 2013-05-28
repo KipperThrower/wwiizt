@@ -42,7 +42,8 @@ public class IndexRecord {
 		}
 	}
 	
-	public void parseFromFile(String path, String content, IndexHeader header) {
+	//TODO opcja z tfidf
+	public void parseFromFile(String path, String content, IndexHeader header, boolean tfidf) {
 		Preconditions.checkNotNull(path);
 		Preconditions.checkNotNull(content);
 		Preconditions.checkNotNull(header);

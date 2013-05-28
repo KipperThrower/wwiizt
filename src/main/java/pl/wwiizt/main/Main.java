@@ -127,9 +127,10 @@ public class Main {
 	private static void handleVectorIndex(CommandLine cmd) {
 		String indexName = cmd.hasOption(INDEX_NAME) ? cmd.getOptionValue(INDEX_NAME) : "index";
 		String inputPath = cmd.getOptionValue(INDEX_VECTORS);
-
+		boolean tfidf = cmd.hasOption(TFIDF);
+		
 		VectorSearchService service = appContext.getBean(VectorSearchService.class);
-		service.index(new File(inputPath), indexName);
+		service.index(new File(inputPath), indexName, stopList, tfidf);
 	}
 
 	private static void handleVectorSearch(CommandLine cmd) {
@@ -141,7 +142,7 @@ public class Main {
 		List<Hint> hints = Lists.newArrayList();
 		
 		if (cmd.hasOption(INDEXED_VECTORS_PATH)) {
-			hints = service.search(new File(cmd.getOptionValue(INDEXED_VECTORS_PATH)), cmd.getOptionValue(SEARCH_VECTOR), distance, tfidf, useSynonyms);
+			hints = service.search(new File(cmd.getOptionValue(INDEXED_VECTORS_PATH)), cmd.getOptionValue(SEARCH_VECTOR), stopList, distance, tfidf, useSynonyms);
 		} else if (cmd.hasOption(DOCUMENTS_DIR)) {
 			hints = service.searchWithoutIndex(new File(cmd.getOptionValue(DOCUMENTS_DIR)), cmd.getOptionValue(SEARCH_VECTOR), distance, stopList, tfidf, useSynonyms);
 		}

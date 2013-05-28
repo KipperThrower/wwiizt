@@ -20,6 +20,7 @@ import pl.wwiizt.main.Main;
 import pl.wwiizt.vector.model.Hint;
 import pl.wwiizt.vector.model.IndexHeader;
 import pl.wwiizt.vector.model.IndexRecord;
+import pl.wwiizt.wordnet.WordnetJDBC;
 import pl.wwizt.vector.distances.Distance;
 
 import com.google.common.base.Preconditions;
@@ -33,7 +34,7 @@ public class VectorSearchService {
 	@Autowired
 	private CclService cclService;
 
-	public void index(File dir, String indexName) {
+	public void index(File dir, String indexName, Set<String> stopList, boolean tfidf) {
 		Preconditions.checkNotNull(dir);
 
 		String pathToIndexDir = dir.getAbsolutePath() + File.separator + indexName + File.separator;
@@ -53,7 +54,11 @@ public class VectorSearchService {
 					ChunkList cl = cclService.loadFile(file);
 
 					if (cl != null) {
-						String[] tokens = cl.getBasePlainText().split(" ");
+						String plainText = cl.getBasePlainText();
+						plainText = filterStopList(plainText, stopList);
+						
+						String[] tokens = plainText.split(" ");
+						
 						for (String token : tokens) {
 							header.addHeader(token);
 						}
@@ -83,7 +88,7 @@ public class VectorSearchService {
 
 						if (cl != null) {
 							IndexRecord ir = new IndexRecord();
-							ir.parseFromFile(file.getAbsolutePath(), cl.getBasePlainText(), header);
+							ir.parseFromFile(file.getAbsolutePath(), cl.getBasePlainText(), header, tfidf);
 							fw.write(ir.toString());
 							fw.write("\n");
 						}
@@ -101,12 +106,18 @@ public class VectorSearchService {
 
 	}
 
-	//TODO obsluzyc te boole
-	public List<Hint> search(File indexDir, String file, Distance distance, boolean tfIdf, boolean useSynonyms) {
+	public List<Hint> search(File indexDir, String file, Set<String> stopList, Distance distance, boolean tfidf, boolean useSynonyms) {
 		ChunkList cl = cclService.loadFile(file);
 		IndexHeader header = readHeader(new File(indexDir.getAbsoluteFile() + File.separator + "header.csv"));
 		IndexRecord searchedIR = new IndexRecord();
-		searchedIR.parseFromFile(file, cl.getBasePlainText(), header);
+		
+		String plainText = cl.getBasePlainText();
+		plainText = filterStopList(plainText, stopList);
+		
+		if (useSynonyms)
+			plainText = addSynonyms(plainText);
+		
+		searchedIR.parseFromFile(file, plainText, header, tfidf);
 
 		List<Hint> hints = Lists.newArrayList();
 
@@ -128,13 +139,16 @@ public class VectorSearchService {
 		return hints;
 	}
 
-	//TODO obsluzyc te boole
-	public List<Hint> searchWithoutIndex(File dir, String path, Distance distance, Set<String> stopList, boolean tfIdf, boolean useSynonyms) {
+	public List<Hint> searchWithoutIndex(File dir, String path, Distance distance, Set<String> stopList, boolean tfidf, boolean useSynonyms) {
 
 		List<Hint> hints = Lists.newArrayList();
 		ChunkList clSearched = cclService.loadFile(path);
 		String clSearchedString = filterStopList(clSearched.getBasePlainText(), stopList);
 
+		if (useSynonyms)
+			clSearchedString = addSynonyms(clSearchedString);
+		
+		
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles(new XmlFileFilter());
 			if (files != null) {
@@ -146,15 +160,15 @@ public class VectorSearchService {
 					if (cl != null) {
 
 						String clString = filterStopList(cl.getBasePlainText(), stopList);
-
+						
 						IndexHeader header = new IndexHeader();
 						header.parse(clSearchedString, clString);
 
 						IndexRecord searchedIR = new IndexRecord();
-						searchedIR.parseFromFile(path, clSearchedString, header);
+						searchedIR.parseFromFile(path, clSearchedString, header, tfidf);
 
 						IndexRecord ir = new IndexRecord();
-						ir.parseFromFile(file.getName(), clString, header);
+						ir.parseFromFile(file.getName(), clString, header, tfidf);
 
 						Hint hint = new Hint();
 						hint.setPath(ir.getFilePath());
@@ -173,6 +187,24 @@ public class VectorSearchService {
 		return hints;
 	}
 
+	private String addSynonyms(String input) {
+		StringBuilder sb = new StringBuilder();
+		
+		for (String s: input.split(" ")) {
+			sb.append(s);
+			sb.append(" ");
+
+			List<String> list = WordnetJDBC.INSTANCE.getLexFromTheSameSynset(s);
+
+			for (String syn : list) {
+				sb.append(syn);
+				sb.append(" ");
+			}
+		}
+		
+		return sb.toString();
+	}
+	
 	private String filterStopList(String content, Set<String> stopList) {
 		if (stopList == null) {
 			return content;
