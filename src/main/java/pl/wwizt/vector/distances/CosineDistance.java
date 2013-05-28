@@ -36,6 +36,16 @@ public class CosineDistance implements Distance {
 
 			@Override
 			public int compare(Hint o1, Hint o2) {
+				double r1 = o1.getRank();
+				double r2 = o2.getRank();
+				
+				if (Double.isNaN(r1))
+					return 1;
+				
+				else if (Double.isNaN(r2))
+					return -1;
+				
+				
 				return -Doubles.compare(o1.getRank(), o2.getRank());
 			}
 
